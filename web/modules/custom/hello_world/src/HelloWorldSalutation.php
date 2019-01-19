@@ -30,7 +30,8 @@ class HelloWorldSalutation {
    * Returns the salutation
    */
   public function getSalutation() {
-    $salutation = $this->configFactory->get('salutation');
+    $config = $this->configFactory->get('hello_world.custom_salutation');
+    $salutation = $config->get('salutation');
     if ($salutation !== '') {
       return $salutation;
     }
