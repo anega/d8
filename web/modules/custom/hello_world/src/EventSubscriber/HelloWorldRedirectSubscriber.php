@@ -2,7 +2,9 @@
 
 namespace Drupal\hello_world\EventSubscriber;
 
+use Drupal\Core\Routing\CurrentRouteMatch;
 use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\Core\Url;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,12 +23,19 @@ class HelloWorldRedirectSubscriber implements EventSubscriberInterface {
   protected $currentUser;
 
   /**
+   * @var \Drupal\Core\Routing\CurrentRouteMatch
+   */
+  protected $currentRoteMatch;
+
+  /**
    * HelloWorldRedirectSubscriber constructor.
    *
    * @param \Drupal\Core\Session\AccountProxyInterface $currentUser
+   * @param \Drupal\Core\Routing\CurrentRouteMatch $currentRoteMatch
    */
-  public function __construct(AccountProxyInterface $currentUser) {
+  public function __construct(AccountProxyInterface $currentUser, CurrentRouteMatch $currentRoteMatch) {
     $this->currentUser = $currentUser;
+    $this->currentRoteMatch = $currentRoteMatch;
   }
 
 
@@ -49,7 +58,7 @@ class HelloWorldRedirectSubscriber implements EventSubscriberInterface {
    * @return array The event names to listen to
    */
   public static function getSubscribedEvents() {
-    $events['kernel.request'][] = ['onRequest', 0];
+    $events[KernelEvents::REQUEST][] = ['onRequest', 0];
     return $events;
   }
 
@@ -59,16 +68,16 @@ class HelloWorldRedirectSubscriber implements EventSubscriberInterface {
    * @param \Symfony\Component\HttpKernel\Event\GetResponseEvent $event
    */
   public function onRequest(GetResponseEvent $event) {
-    /** @var Request $request */
-    $request = $event->getRequest();
-    $path = $request->getPathInfo();
-    if ($path !== '/hello') {
+    $route_name = $this->currentRoteMatch->getRouteName();
+
+    if ($route_name !== 'hello_world.hello') {
       return;
     }
 
     $roles = $this->currentUser->getRoles();
     if (in_array('non_grata', $roles)) {
-      $event->setResponse(new RedirectResponse('/'));
+      $url = Url::fromUri('internal:/');
+      $event->setResponse(new RedirectResponse($url->toString()));
     }
   }
 }
